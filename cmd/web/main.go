@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/andkolbe/chirper-gin/internal/env"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -14,8 +15,8 @@ var router *gin.Engine
 var db *sql.DB
 
 func main() {
-	LoadEnv()
-	
+	env.LoadEnv()
+
 	router = gin.Default()
 
 	router.LoadHTMLGlob("templates/*")
