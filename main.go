@@ -4,57 +4,16 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
-	"time"
 
+	"github.com/andkolbe/chirper-gin/models"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 )
 
 var router *gin.Engine
-
-var db *sql.DB
-
-type User struct {
-	ID         int       `json:"id"`
-	Name       string    `json:"name"`
-	Email      string    `json:"email"`
-	Password   string    `json:"password"`
-	Created_At time.Time `json:"created_at"`
-}
-
-func GetAllUsers(c *gin.Context) {
-	fmt.Println("Got here 0")
-	rows, err := db.Query("SELECT * FROM users")
-	if err != nil {
-		fmt.Println("Got here 1")
-		fmt.Println(err)
-		return
-	}
-	defer rows.Close()
-
-	var users []User
-
-	for rows.Next() {
-		var user User
-		err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Created_At)
-		if err != nil {
-			fmt.Println("Got here 2")
-			fmt.Println(err)
-		}
-		users = append(users, user)
-	}
-	if err = rows.Err(); err != nil {
-		fmt.Println("Got here 3")
-		fmt.Println(err)
-	}
-
-	for _, user := range users {
-		fmt.Printf("%q, %s, %s, %s", user.ID, user.Name, user.Email, user.Password)
-	}
-
-}
 
 func LoadEnv() {
 	err := godotenv.Load(".env")
@@ -64,10 +23,11 @@ func LoadEnv() {
 }
 
 func initializeRoutes() {
-	router.GET("/users", GetAllUsers)
+	router.GET("/users", UsersIndex)
 }
 
-func main() {
+// Go handles the execution of this function for us
+func init() {
 	LoadEnv()
 	
 	USER := os.Getenv("DB_USER")
@@ -79,18 +39,20 @@ func main() {
 
 	// Get a database handle
 	var err error 
-	db, err = sql.Open("mysql", URL)
+	models.DB, err = sql.Open("mysql", URL)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if err = db.Ping(); err != nil {
+	// because sql.Open doesn't actually check a connection, we also call DB.Ping() to make sure that everything works OK on startup
+	if err = models.DB.Ping(); err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Println("connected to DB!")
+}
 
-	defer db.Close()
+func main() {
 
 	router = gin.Default()
 
@@ -98,4 +60,18 @@ func main() {
 
 	router.Run()
 	
+}
+
+
+func UsersIndex(c *gin.Context) {
+	users, err := models.GetAllUsers()
+	if err != nil {
+		log.Println(err)
+		c.String(http.StatusInternalServerError, fmt.Sprintf("error: %s", err))
+		return
+	}
+
+	for _, user := range users {
+		fmt.Printf("%q, %s, %s, %s", user.ID, user.Name, user.Email, user.Password)
+	}
 }
