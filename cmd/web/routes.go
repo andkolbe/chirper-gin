@@ -1,9 +1,15 @@
 package main
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/andkolbe/chirper-gin/internal/handlers"
+)
 
 func initializeRoutes() {
-	router.GET("/", func(c *gin.Context) {
-		c.HTML(200, "home.html", gin.H{"title": "Home Page"})
-	})
+	router.GET("/", handlers.HomePage)
+
+	chirpRoutes := router.Group("/chirps")
+	{
+		chirpRoutes.GET("/:chirp_id", handlers.GetChirp)
+	}
 }
+

@@ -18,7 +18,7 @@ var db *sql.DB
 // update a chirp
 // destroy a chirp
 
-func showAllChirps() ([]Chirp, error) {
+func ShowAllChirps() ([]Chirp, error) {
 	// a chirp slice to hold data from returned rows
 	var chirps []Chirp
 
@@ -45,4 +45,21 @@ func showAllChirps() ([]Chirp, error) {
 		return nil, err
 	}
 	return chirps, nil
+}
+
+func GetChirpByID(id int) (Chirp, error) {
+	// a chirp to hold data from the returned row
+	var chirp Chirp
+
+	row := db.QueryRow("SELECT * FROM chirps WHERE id = ?", id)
+	// Use row.Scan to copy column values into struct fields
+	if err := row.Scan(
+		&chirp.ID,
+		&chirp.Content,
+		&chirp.Location,
+	);
+	err != nil {
+		return chirp, err
+	}
+	return chirp, nil
 }
