@@ -5,8 +5,6 @@ import (
 	"time"
 )
 
-var DB *sql.DB
-
 // we can only use string and int safely because we set NOT NULL constraints on all of the columns on the table
 type User struct {
 	ID         int       `json:"id"`
@@ -16,9 +14,9 @@ type User struct {
 	Created_At time.Time `json:"created_at"`
 }
 
-func GetAllUsers() ([]User, error) {
+func GetAllUsers(db *sql.DB) ([]User, error) {
 	// we fetch a result set from the books table using the DB.Query() method and assign it to a rows variable
-	rows, err := DB.Query("SELECT * FROM users")
+	rows, err := db.Query("SELECT * FROM users")
 	if err != nil {
 		return nil, err
 	}

@@ -13,7 +13,11 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var router *gin.Engine
+// create a custom Env struct which holds a connection pool
+// all the dependencies for our handlers are explicitly defined in one place
+type Env struct {
+	db *sql.DB
+}
 
 func LoadEnv() {
 	err := godotenv.Load(".env")
@@ -22,12 +26,7 @@ func LoadEnv() {
 	}
 }
 
-func initializeRoutes() {
-	router.GET("/users", UsersIndex)
-}
-
-// Go handles the execution of this function for us
-func init() {
+func main() {
 	LoadEnv()
 	
 	USER := os.Getenv("DB_USER")
@@ -39,32 +38,31 @@ func init() {
 
 	// Get a database handle
 	var err error 
-	models.DB, err = sql.Open("mysql", URL)
+	db, err := sql.Open("mysql", URL)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// because sql.Open doesn't actually check a connection, we also call DB.Ping() to make sure that everything works OK on startup
-	if err = models.DB.Ping(); err != nil {
+	if err = db.Ping(); err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Println("connected to DB!")
+
+	// create an instance of Env containing the connection pool
+	env := &Env{db: db}
+
+	router := gin.Default()
+
+	router.GET("/users", env.UsersIndex)
+
+	router.Run()	
 }
 
-func main() {
 
-	router = gin.Default()
-
-	initializeRoutes()
-
-	router.Run()
-	
-}
-
-
-func UsersIndex(c *gin.Context) {
-	users, err := models.GetAllUsers()
+func (env *Env) UsersIndex(c *gin.Context) {
+	users, err := models.GetAllUsers(env.db)
 	if err != nil {
 		log.Println(err)
 		c.String(http.StatusInternalServerError, fmt.Sprintf("error: %s", err))
