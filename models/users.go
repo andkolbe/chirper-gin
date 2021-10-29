@@ -14,9 +14,15 @@ type User struct {
 	Created_At time.Time `json:"created_at"`
 }
 
-func GetAllUsers(db *sql.DB) ([]User, error) {
+// create a custom UserModel type which wraps the sql.DB connection pool
+type UserModel struct {
+	DB *sql.DB
+}
+
+// use a method on the custom UserModel type to run the SQL query
+func (m UserModel) GetAllUsers() ([]User, error) {
 	// we fetch a result set from the books table using the DB.Query() method and assign it to a rows variable
-	rows, err := db.Query("SELECT * FROM users")
+	rows, err := m.DB.Query("SELECT * FROM users")
 	if err != nil {
 		return nil, err
 	}

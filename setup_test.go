@@ -18,6 +18,14 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+func setupRouter() *gin.Engine {
+	r := gin.Default()
+	r.GET("/ping", func(c *gin.Context)  {
+		c.String(200, "pong")
+	})
+	return r
+}
+
 // func getRouter(withTemplates bool) *gin.Engine {
 // 	r := gin.Default()
 // 	if withTemplates {

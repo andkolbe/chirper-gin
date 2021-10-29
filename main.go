@@ -16,7 +16,9 @@ import (
 // create a custom Env struct which holds a connection pool
 // all the dependencies for our handlers are explicitly defined in one place
 type Env struct {
-	db *sql.DB
+	users interface {
+		GetAllUsers() ([]models.User, error)
+	}
 }
 
 func LoadEnv() {
@@ -37,7 +39,6 @@ func main() {
 	URL := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True&loc=Local", USER, PASS, HOST, DBNAME)
 
 	// Get a database handle
-	var err error 
 	db, err := sql.Open("mysql", URL)
 	if err != nil {
 		log.Fatal(err)
@@ -51,7 +52,9 @@ func main() {
 	fmt.Println("connected to DB!")
 
 	// create an instance of Env containing the connection pool
-	env := &Env{db: db}
+	env := &Env{
+		users: models.UserModel{DB: db},
+	}
 
 	router := gin.Default()
 
@@ -62,7 +65,7 @@ func main() {
 
 
 func (env *Env) UsersIndex(c *gin.Context) {
-	users, err := models.GetAllUsers(env.db)
+	users, err := env.users.GetAllUsers()
 	if err != nil {
 		log.Println(err)
 		c.String(http.StatusInternalServerError, fmt.Sprintf("error: %s", err))
